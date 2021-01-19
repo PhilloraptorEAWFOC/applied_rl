@@ -21,7 +21,7 @@ class NoisedObservationWrapper(gym.ObservationWrapper):
         return observation + np.random.normal(self.mean, self.std_dev, 4)
 
 
-def sample_data(env, episodes=200 save=False):
+def sample_data(env, episodes=200, save=False):
     env.np_random.seed(0)
 
     CART_POS="cartPos"
