@@ -10,22 +10,23 @@ class NoisedObservationWrapper(gym.ObservationWrapper):
     # from stable_baselines.common import make_vec_env
     # env = make_vec_env(NoisedObservationWrapper(gym.make("CartPole-v0")))
 
-    def __init__(self, env, std_dev=0.3, mean=0):
+    def __init__(self, env, std_dev=0.3, mean=0, angle_min=10, angle_max=20):
         super(NoisedObservationWrapper, self).__init__(env)
         self.std_dev = std_dev
         self.mean = mean
+        self.angle_min = np.radians(angle_min)
+        self.angle_max = np.radians(angle_max)
 
     def observation(self, observation):
         # angle of pole is limited between radians [-0.418; 0.418]
         # which corresponds to [-24; 24] degrees
         angle = observation[2]
 
-        # add noise if angle position is between 10° and 20°
-        if (0.175 <= angle <= 0.349):
+        # add noise if angle position is between angle_min and angle_max
+        if (self.angle_min <= angle <= self.angle_max):
             angle += np.random.normal(self.mean, self.std_dev)
-        observation = np.array([observation[0], observation[1], angle, observation[3]])
 
-        return observation
+        return np.array([observation[0], observation[1], angle, observation[3]])
 
 
 def sample_data(env, episodes=200, save=False):
