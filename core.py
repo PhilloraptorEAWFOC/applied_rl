@@ -2,31 +2,49 @@ import gym
 import numpy as np
 import pandas as pd
 
+lbr = "\n"
 
-class NoisedObservationWrapper(gym.ObservationWrapper):
+class NoisedObservationWrapper(gym.Wrapper):
     # encapsulate environment with this wrapper and use env just like before:
     # env = NoisedObservationWrapper(gym.make("CartPole-v0"))
     # for PPO2:
     # from stable_baselines.common import make_vec_env
     # env = make_vec_env(NoisedObservationWrapper(gym.make("CartPole-v0")))
 
-    def __init__(self, env, std_dev=0.3, mean=0, angle_min=10, angle_max=20):
-        super(NoisedObservationWrapper, self).__init__(env)
+    def __init__(self, env, std_dev=0.3, mean=0, angle_min=10, angle_max=20, local_path="false"):
+        super().__init__(env)
+        self.env = env
         self.std_dev = std_dev
         self.mean = mean
         self.angle_min = np.radians(angle_min)
         self.angle_max = np.radians(angle_max)
+        self.local_path = local_path
+        
+        if(self.local_path != "false"):
+            log_file = open(self.local_path, "w")
+            log_file.close()
 
-    def observation(self, observation):
+    def step(self, action):
         # angle of pole is limited between radians [-0.418; 0.418]
         # which corresponds to [-24; 24] degrees
+        observation, reward, done, info = self.env.step(action)
+        
+        
         angle = observation[2]
+        
+        noisy = (self.angle_min <= angle <= self.angle_max)
 
         # add noise if angle position is between angle_min and angle_max
-        if (self.angle_min <= angle <= self.angle_max):
-            angle += np.random.normal(self.mean, self.std_dev)
+        if (noisy):
+            observation[2] += np.random.normal(self.mean, self.std_dev)
 
-        return np.array([observation[0], observation[1], angle, observation[3]])
+        if(self.local_path != "false"):
+            log_file = open(self.local_path, "a")
+            log_file.write(str((observation, reward, done, info, noisy)))
+            log_file.write(lbr)
+            log_file.close()      
+            
+        return observation, reward, done, info
 
 
 def sample_data(env, episodes=200, save=False):
